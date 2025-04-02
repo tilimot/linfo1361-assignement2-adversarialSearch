@@ -266,3 +266,6 @@ class VisualGameManager:
 
         pygame.quit()
         sys.exit()
+
+vg = VisualGameManager()
+vg.play()
