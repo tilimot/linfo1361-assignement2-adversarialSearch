@@ -1,9 +1,10 @@
 class Agent:
-    def __init__(self, player):
+    def __init__(self, player,depth = 1):
         self.player = player
+        self.depth=depth
     
-    def alpha_beta_search(self, state, depth):
-        _, action = self.max_value(state, -float('inf'), float('inf'), depth)
+    def alpha_beta_search(self, state):
+        _, action = self.max_value(state, -float('inf'), float('inf'), self.depth)
         return action
     
     def max_value(self, state, alpha, beta, depth):
@@ -43,5 +44,5 @@ class Agent:
         return value, action
     
     def act(self, state, remaining_time):
-        action = self.alpha_beta_search(state, depth=3)
+        action = self.alpha_beta_search(state)
         return action
