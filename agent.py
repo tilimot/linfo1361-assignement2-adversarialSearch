@@ -50,5 +50,5 @@ class Agent:
     
     def act(self, state, remaining_time):
         action = self.alpha_beta_search(state)
-        #print(self.get_piece_remaining())
+        #print(state._has_piece(1))
         return action

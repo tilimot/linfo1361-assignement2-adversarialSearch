@@ -17,7 +17,17 @@ from random_agent import *
 #NUM_GAMES = 50  # Number of games per depth
 #DEPTHS = [1, 2, 3, 4]  # Depths to test
 
+def pipeline(depths, n_exp):
+    folder_path = generate_folderpath()
 
+    # Run Experiments & store it into ./stats/ folder
+    win_rate = run_experiment(Agent,RandomAgent, TextGameManager, folder_path,depths, n_exp)
+
+    # Plot results
+    stats = compute_move_time_stats(folder_path)
+    plot_multi_depth(stats, folder_path)
+   
+   
 def send_to_file(file_path,data):
     with open(file_path,'a') as f:
         f.write(data)
