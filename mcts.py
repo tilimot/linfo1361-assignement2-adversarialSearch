@@ -74,12 +74,7 @@ class UCT:
 
 
     def backpropagate(self, node, result):
-        #results to parent and update stats
-        actual_node = node
-        while actual_node is not None:
-            actual_node.visits += 1
-            actual_node.wins += result
-            
-            #2 players -> reverse result for parent
-            result = -result
-            actual_node = actual_node.parent_node
+        node.visits += 1
+        if result == 1: node.wins += 1
+        if node.parent_node != None:
+            self.backpropagate(node.parent_node, -result)
