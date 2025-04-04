@@ -44,11 +44,8 @@ class Agent:
                 break  # Coupure alpha-beta
 
         return value, action
-    
-    def get_piece_remaining(state:FenixState):
-        return state._has_piece
+            
     
     def act(self, state, remaining_time):
         action = self.alpha_beta_search(state)
-        #print(state._has_piece(1))
         return action

@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import time
 from collections import defaultdict
 import json
 from datetime import datetime
@@ -22,6 +21,7 @@ def pipeline(depths, n_exp):
 
     # Run Experiments & store it into ./stats/ folder
     win_rate = run_experiment(Agent,RandomAgent, TextGameManager, folder_path,depths, n_exp)
+    print(win_rate)
 
     # Plot results
     stats = compute_move_time_stats(folder_path)
@@ -59,7 +59,14 @@ def run_experiment(agent_class, random_agent_class, game_manager_class, folder_p
             
             p1_score, p2_score = game_manager.play()
             agent_1_time, agent_2_time = extract_timePerMove(game_manager)
-            save_game_data(path, agent_1_time, agent_2_time,p1_score,depth)
+            agent_1_piecesRemaining, agent_2_piecesRemaining = game_manager.agent_1_piecesRemaining, game_manager.agent_2_piecesRemaining
+            
+            agent1 = {"times":agent_1_time, "pieces":agent_1_piecesRemaining}
+            agent2 = {"times":agent_2_time, "pieces":agent_2_piecesRemaining}
+            
+            
+            
+            save_game_data(path, agent1, agent2, p1_score, depth)
             
             results[depth]["wins"] += (1 if p1_score > p2_score else 0)
             results[depth]["losses"] += (1 if p1_score < p2_score else 0)
@@ -94,7 +101,7 @@ def extract_timePerMove(tgm:TextGameManager):
     return agent_1_time, agent_2_time
 
 
-def save_game_data(file_path, agent1_times=None, agent2_times=None, winner=None, depth=None, win_rate=None):
+def save_game_data(file_path, agent1=None, agent2=None, winner=None, depth=None, win_rate=None):
     # Charger l'ancien fichier s'il existe
     if os.path.exists(file_path):
         with open(file_path, 'r') as f:
@@ -114,8 +121,8 @@ def save_game_data(file_path, agent1_times=None, agent2_times=None, winner=None,
         
     else:
         data[timestamp] = {
-            "agent1_times": agent1_times,
-            "agent2_times": agent2_times,
+            "agent1": agent1,
+            "agent2": agent2,
             "winner": winner,
             "depth": depth
         }
@@ -171,19 +178,29 @@ def compute_move_time_stats(directory):
             agent1_moves = []
             agent2_moves = []
             
+            agent1_pieces = []
+            agent2_pieces=[]
+            
+            
             # Ensure lists are long enough
             max_moves = 0
 
             # Extract move times per game
             for game in data.values():
-                agent1_times = game["agent1_times"]
-                agent2_times = game["agent2_times"]
+                agent1_times = game["agent1"]["times"]
+                agent2_times = game["agent2"]["times"]
+                
+                a1_pieces = game["agent1"]["pieces"]
+                a2_pieces = game["agent2"]["pieces"]
+                
                 
                 max_moves = max(max_moves, len(agent1_times), len(agent2_times))
                 
                 # Append to per-move lists
                 agent1_moves.append(agent1_times)
                 agent2_moves.append(agent2_times)
+                agent1_pieces.append(a1_pieces)
+                agent2_pieces.append(a2_pieces)
 
             # Compute mean and std for each move index
             agent1_means = []
@@ -203,13 +220,37 @@ def compute_move_time_stats(directory):
 
             # Store stats
             stats[depth] = {
-                "agent1": {"means": agent1_means, "stds": agent1_stds},
-                "agent2": {"means": agent2_means, "stds": agent2_stds}
+                "agent1":{"times": {"means": agent1_means, "stds": agent1_stds}, "pieces": agent1_pieces },
+                "agent2": {"times": {"means": agent2_means, "stds": agent2_stds},"pieces": agent2_pieces}
             }
         else : 
             pass
 
     return stats
+
+
+def plot_multi_depth(stats, folder_path=None):
+    plt.figure(figsize=(10, 6))
+
+    # Loop through each depth and plot the mean move time
+    for depth, data in sorted(stats.items()):
+        move_indices = list(range(len(data["agent1"]["times"]["means"])))
+        mean_times = data["agent1"]["times"]["means"]  # Use Agent 1's times, or average both agents
+
+        plt.plot(move_indices, mean_times, marker='o', linestyle='-', label=f"Depth {depth}")
+
+    # Labels and title
+    plt.xlabel("Move Index")
+    plt.ylabel("Mean Move Time (seconds)")
+    plt.title("Agent Move Time per Move for Different Depths")
+    plt.legend()
+    plt.grid(True)
+    
+    if folder_path != None:
+        plt.savefig(folder_path+"game_time_plot.png", dpi=300)
+
+    plt.show()
+
 
 
 def plot_stats(stats):
@@ -293,27 +334,7 @@ def plot_move_time_all_depth(stats, depth_max):
 
 
 
-def plot_multi_depth(stats, folder_path=None):
-    plt.figure(figsize=(10, 6))
 
-    # Loop through each depth and plot the mean move time
-    for depth, data in sorted(stats.items()):
-        move_indices = list(range(len(data["agent1"]["means"])))
-        mean_times = data["agent1"]["means"]  # Use Agent 1's times, or average both agents
-
-        plt.plot(move_indices, mean_times, marker='o', linestyle='-', label=f"Depth {depth}")
-
-    # Labels and title
-    plt.xlabel("Move Index")
-    plt.ylabel("Mean Move Time (seconds)")
-    plt.title("Agent Move Time per Move for Different Depths")
-    plt.legend()
-    plt.grid(True)
-    
-    if folder_path != None:
-        plt.savefig(folder_path+"game_time_plot.png", dpi=300)
-
-    plt.show()
 
 
 
