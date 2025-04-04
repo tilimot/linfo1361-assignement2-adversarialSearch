@@ -32,13 +32,11 @@ class UCT:
 
 
     def select(self, node):
-        #last node
-        if node.state.is_terminal() or not node.children:
-            return node
-        
-        #select recursive child with best val
-        best_child = max(node.children, key=lambda child: self.UCB1(child))
-        return self.select(best_child)
+        while node.children and node.state and not node.state.is_terminal():
+            node = max(node.children, key=self.UCB1)
+        return node
+
+
 
 
     def expand(self, node):
