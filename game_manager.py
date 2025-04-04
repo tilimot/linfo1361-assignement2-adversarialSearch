@@ -18,16 +18,6 @@ class TextGameManager:
         self.time_agent_1=[]
         self.time_agent_2=[]
     
-    '''
-    def send_to_file(file_path,data):
-        with open(file_path,'a') as f:
-            f.write(data)
-    
-    def generate_filename():
-        """Generates a filename based on the current date and time."""
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        return f"game_stats_{timestamp}.txt"
-    '''
 
     def play(self):
         state = fenix.FenixState()

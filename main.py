@@ -2,23 +2,33 @@ from visual_game_manager import *
 from game_manager import *
 from stats import *
 
+
+# Init
+depths=[1,2,3,4]
+
+date = datetime.now().strftime("%Y-%m-%d")
+folder_path = "stats\\"+date+"\\"
+os.makedirs(folder_path, exist_ok=True) #create folder
+
+
+# Run Experiments
+a = run_experiment(Agent,RandomAgent, TextGameManager, folder_path,depths, 100)
+
+# Plot results
+stats = compute_move_time_stats(folder_path)
+plot_multi_depth(stats)  # Change depth as needed
+
+
+''''
+DEPTH = 2
+
 #agent = Agent()
-red = Agent(1,depth=1)
+red = Agent(1,depth=DEPTH)
 black = RandomAgent(-1)
 #vg = VisualGameManager(red_agent=red,black_agent=black)
 #vg.play()
 
-tgm = TextGameManager(agent_1=red,agent_2=black,display=False)
+tgm = TextGameManager(agent_1=red,agent_2=black,display=True)
 print(tgm.play())
-agent_1_time = tgm.time_agent_1
-agent_2_time = tgm.time_agent_2
 
-agent_1_file = generate_filename()
-agent_2_file = generate_filename()
-stat_folder = ".\\stats\\"
-
-with open(agent_1_file,'w') as f1:
-    f1.write(agent_1_time)
-    
-with open(agent_2_file, 'w') as f2:
-    f2.write(agent_2_time)
+'''
