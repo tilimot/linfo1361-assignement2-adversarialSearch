@@ -1,3 +1,5 @@
+from fenix import *
+
 class Agent:
     def __init__(self, player,depth = 1):
         self.player = player
@@ -43,6 +45,10 @@ class Agent:
 
         return value, action
     
+    def get_piece_remaining(state:FenixState):
+        return state._has_piece
+    
     def act(self, state, remaining_time):
         action = self.alpha_beta_search(state)
+        #print(self.get_piece_remaining())
         return action

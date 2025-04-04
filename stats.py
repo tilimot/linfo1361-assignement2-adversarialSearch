@@ -22,6 +22,13 @@ def send_to_file(file_path,data):
     with open(file_path,'a') as f:
         f.write(data)
 
+def generate_folderpath():
+    date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    folder_path = "stats\\"+date+"\\"
+    os.makedirs(folder_path, exist_ok=True)
+    return folder_path
+
+
 def generate_filename():
     """Generates a filename based on the current date and time."""
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -34,7 +41,7 @@ def run_experiment(agent_class, random_agent_class, game_manager_class, folder_p
     
     for depth in depths:
         print(f"Running {num_games} games for depth {depth}...")
-        path = folder_path+generate_filename()+"_"+str(depth)+".txt"
+        path = folder_path+generate_filename()+"_depth_"+str(depth)+".json"
         for _ in range(num_games):
             agent_1 = agent_class(1, depth)
             agent_2 = random_agent_class(-1)
@@ -46,6 +53,8 @@ def run_experiment(agent_class, random_agent_class, game_manager_class, folder_p
             
             results[depth]["wins"] += (1 if p1_score > p2_score else 0)
             results[depth]["losses"] += (1 if p1_score < p2_score else 0)
+    
+    save_game_data(folder_path+"win_rate.json",win_rate=results)
 
     return results
 
@@ -75,7 +84,7 @@ def extract_timePerMove(tgm:TextGameManager):
     return agent_1_time, agent_2_time
 
 
-def save_game_data(file_path, agent1_times, agent2_times, winner, depth):
+def save_game_data(file_path, agent1_times=None, agent2_times=None, winner=None, depth=None, win_rate=None):
     # Charger l'ancien fichier s'il existe
     if os.path.exists(file_path):
         with open(file_path, 'r') as f:
@@ -90,12 +99,16 @@ def save_game_data(file_path, agent1_times, agent2_times, winner, depth):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     
     # Ajouter les données
-    data[timestamp] = {
-        "agent1_times": agent1_times,
-        "agent2_times": agent2_times,
-        "winner": winner,
-        "depth": depth
-    }
+    if win_rate!=None:
+        data = win_rate
+        
+    else:
+        data[timestamp] = {
+            "agent1_times": agent1_times,
+            "agent2_times": agent2_times,
+            "winner": winner,
+            "depth": depth
+        }
 
     # Sauvegarder le fichier JSON mis à jour
     with open(file_path, 'w') as f:
@@ -133,89 +146,58 @@ def plot_move_per_time_game(agent_1_time:list,agent_2_time:list,depth):
     plt.savefig(".\\graphs\\"+date+"_game_time_plot.png", dpi=300)
 
 
-def compute_stats(directory):
-    stats = {}  # Store stats for each depth
-    print("here")
-    # Loop through all JSON files in the directory
-    for file_path in glob.glob(os.path.join(directory, "*.txt")):
-        print(file_path)
-
-        #depth = int(os.path.basename(file_path).split('_')[1].split('.')[0])  # Extract depth from filename
-        depth = int(file_path[-5])
-        
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-
-        agent1_times = []
-        agent2_times = []
-        
-        # Extract move times for each game
-        for game in data.values():
-            agent1_times.extend(game["agent1_times"])
-            agent2_times.extend(game["agent2_times"])
-
-        # Compute statistics
-        stats[depth] = {
-            "agent1": {
-                "mean": np.mean(agent1_times),
-                "std": np.std(agent1_times)
-            },
-            "agent2": {
-                "mean": np.mean(agent2_times),
-                "std": np.std(agent2_times)
-            }
-        }
-
-    return stats
 
 
 def compute_move_time_stats(directory):
     stats = {}  # Store stats for each depth
     
     # Loop through all JSON files in the directory
-    for file_path in glob.glob(os.path.join(directory, "*.txt")):
-        depth = int(file_path[-5])        
-        with open(file_path, 'r') as f:
-            data = json.load(f)
+    for file_path in glob.glob(os.path.join(directory, "*.json")):
+        if "win_rate" not in file_path: 
+            depth = int(file_path[-6])        
+            with open(file_path, 'r') as f:
+                data = json.load(f)
 
-        agent1_moves = []
-        agent2_moves = []
-        
-        # Ensure lists are long enough
-        max_moves = 0
-
-        # Extract move times per game
-        for game in data.values():
-            agent1_times = game["agent1_times"]
-            agent2_times = game["agent2_times"]
+            agent1_moves = []
+            agent2_moves = []
             
-            max_moves = max(max_moves, len(agent1_times), len(agent2_times))
-            
-            # Append to per-move lists
-            agent1_moves.append(agent1_times)
-            agent2_moves.append(agent2_times)
+            # Ensure lists are long enough
+            max_moves = 0
 
-        # Compute mean and std for each move index
-        agent1_means = []
-        agent1_stds = []
-        agent2_means = []
-        agent2_stds = []
+            # Extract move times per game
+            for game in data.values():
+                agent1_times = game["agent1_times"]
+                agent2_times = game["agent2_times"]
+                
+                max_moves = max(max_moves, len(agent1_times), len(agent2_times))
+                
+                # Append to per-move lists
+                agent1_moves.append(agent1_times)
+                agent2_moves.append(agent2_times)
 
-        for i in range(max_moves):
-            move_times_1 = [game[i] for game in agent1_moves if i < len(game)]
-            move_times_2 = [game[i] for game in agent2_moves if i < len(game)]
+            # Compute mean and std for each move index
+            agent1_means = []
+            agent1_stds = []
+            agent2_means = []
+            agent2_stds = []
 
-            agent1_means.append(np.mean(move_times_1) if move_times_1 else 0)
-            agent1_stds.append(np.std(move_times_1) if move_times_1 else 0)
+            for i in range(max_moves):
+                move_times_1 = [game[i] for game in agent1_moves if i < len(game)]
+                move_times_2 = [game[i] for game in agent2_moves if i < len(game)]
 
-            agent2_means.append(np.mean(move_times_2) if move_times_2 else 0)
-            agent2_stds.append(np.std(move_times_2) if move_times_2 else 0)
+                agent1_means.append(np.mean(move_times_1) if move_times_1 else 0)
+                agent1_stds.append(np.std(move_times_1) if move_times_1 else 0)
 
-        # Store stats
-        stats[depth] = {
-            "agent1": {"means": agent1_means, "stds": agent1_stds},
-            "agent2": {"means": agent2_means, "stds": agent2_stds}
-        }
+                agent2_means.append(np.mean(move_times_2) if move_times_2 else 0)
+                agent2_stds.append(np.std(move_times_2) if move_times_2 else 0)
+
+            # Store stats
+            stats[depth] = {
+                "agent1": {"means": agent1_means, "stds": agent1_stds},
+                "agent2": {"means": agent2_means, "stds": agent2_stds}
+            }
+        else : 
+            pass
 
     return stats
 
@@ -299,9 +281,9 @@ def plot_move_time_all_depth(stats, depth_max):
 
     plt.show()
 
-import matplotlib.pyplot as plt
 
-def plot_multi_depth(stats):
+
+def plot_multi_depth(stats, folder_path=None):
     plt.figure(figsize=(10, 6))
 
     # Loop through each depth and plot the mean move time
@@ -317,6 +299,9 @@ def plot_multi_depth(stats):
     plt.title("Agent Move Time per Move for Different Depths")
     plt.legend()
     plt.grid(True)
+    
+    if folder_path != None:
+        plt.savefig(folder_path+"game_time_plot.png", dpi=300)
 
     plt.show()
 
