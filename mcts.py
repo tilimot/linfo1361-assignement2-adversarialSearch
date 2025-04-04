@@ -1,5 +1,6 @@
-class UCT:
-
+import random
+import math
+class AgentMcts:
     class Node:
         def __init__(self, parent_node, action_from_parent, state):
             self.parent_node = parent_node
@@ -76,3 +77,10 @@ class UCT:
         if result == 1: node.wins += 1
         if node.parent_node != None:
             self.backpropagate(node.parent_node, -result)
+
+    def act(self, state, remaining_time):
+        action = self.mcts(state)
+        return action
+    
+    def get_action(self, state, remaining_time):
+        return self.act(state, remaining_time)
