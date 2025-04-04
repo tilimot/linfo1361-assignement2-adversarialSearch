@@ -5,6 +5,7 @@ import random
 import threading
 import time
 from copy import deepcopy
+from random_agent import *
 
 class VisualGameManager:
     """
@@ -123,6 +124,7 @@ class VisualGameManager:
         agent = self.red_agent if self.state.current_player == 1 else self.black_agent
         remaining_time = self.remaining_time_red if self.state.current_player == 1 else self.remaining_time_black
         self.agent_action = agent.act(deepcopy(self.state), remaining_time)
+        print("here3")
 
     def update(self):
         if self.state.is_terminal() or self.remaining_time_red <= 0 or self.remaining_time_black <= 0:
@@ -266,6 +268,3 @@ class VisualGameManager:
 
         pygame.quit()
         sys.exit()
-
-vg = VisualGameManager()
-vg.play()

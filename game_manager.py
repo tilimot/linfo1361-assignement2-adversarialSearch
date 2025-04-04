@@ -1,6 +1,8 @@
 import fenix
 import time
 from copy import deepcopy
+from datetime import datetime
+
 
 class TextGameManager:
     def __init__(self, agent_1, agent_2, time_limit=300, display=True):
@@ -12,6 +14,20 @@ class TextGameManager:
 
         self.dim = (7, 9)
         self.display = display
+        
+        self.time_agent_1=[]
+        self.time_agent_2=[]
+    
+    '''
+    def send_to_file(file_path,data):
+        with open(file_path,'a') as f:
+            f.write(data)
+    
+    def generate_filename():
+        """Generates a filename based on the current date and time."""
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        return f"game_stats_{timestamp}.txt"
+    '''
 
     def play(self):
         state = fenix.FenixState()
@@ -49,10 +65,13 @@ class TextGameManager:
                 print(state)
 
             if current_player == 1:
+                self.time_agent_1.append(remaining_time)
                 self.remaining_time_1 = remaining_time
+                
             else:
+                self.time_agent_2.append(remaining_time)
                 self.remaining_time_2 = remaining_time
-
+                
             turn += 1
 
         if self.display:
