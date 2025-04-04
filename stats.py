@@ -334,6 +334,35 @@ def plot_move_time_all_depth(stats, depth_max):
 
 
 
+def plot_time_and_pieces(agent_data,  depth,agent_name="agent1"):
+    times = agent_data[depth][agent_name]['times']['means']
+    pieces = agent_data[depth][agent_name]["pieces"][0]
+
+    # Sécuriser pour éviter mismatch
+    min_len = min(len(times), len(pieces))
+    times = times[:min_len]
+    pieces = pieces[:min_len]
+    turns = list(range(1, min_len + 1))
+
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    color_time = 'tab:blue'
+    ax1.set_xlabel('Numéro du coup')
+    ax1.set_ylabel('Temps de réflexion (s)', color=color_time)
+    ax1.plot(turns, times, label='Temps de réflexion', color=color_time)
+    ax1.tick_params(axis='y', labelcolor=color_time)
+
+    ax2 = ax1.twinx()  # Deuxième axe Y
+    color_pieces = 'tab:red'
+    ax2.set_ylabel('Nombre de pièces restantes', color=color_pieces)
+    ax2.plot(turns, pieces, label='Pièces restantes', color=color_pieces)
+    ax2.tick_params(axis='y', labelcolor=color_pieces)
+
+    plt.title(f"{agent_name} – Temps de réflexion et pièces restantes par coup")
+    fig.tight_layout()
+    plt.grid(True)
+    plt.show()
+
 
 
 
