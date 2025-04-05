@@ -5,9 +5,11 @@ from mcts import AgentMcts
 
 
 #Code to launch pipeline
-depths=[1,2,3,4,5]
-pipeline(depths,50)
+# depths=[1,2,3,4]
+# pipeline(depths,50, algorithm='AlphaBeta')
 
+iterations = [250, 1000]
+pipeline(iterations, 20, algorithm='MCTS')
 
 
 

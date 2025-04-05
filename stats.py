@@ -8,6 +8,7 @@ import glob
 
 
 from agent import *
+from mcts import *
 from random import *
 from game_manager import *
 from random_agent import *
@@ -16,20 +17,53 @@ from random_agent import *
 #NUM_GAMES = 50  # Number of games per depth
 #DEPTHS = [1, 2, 3, 4]  # Depths to test
 
-def pipeline(depths, n_exp):
+   
+def pipeline(params, n_exp, algorithm='AlphaBeta'):
     folder_path = generate_folderpath()
+    
+    if algorithm == 'AlphaBeta':
+        agent_class = Agent
+        param_name = 'depth'
+    else:
+        agent_class = AgentMcts
+        param_name = 'iterations'
 
-    # Run Experiments & store it into ./stats/ folder
-    win_rate = run_experiment(Agent,RandomAgent, TextGameManager, folder_path,depths, n_exp)
+    # Run Experiments
+    win_rate = run_experiment(agent_class, RandomAgent, TextGameManager, 
+                            folder_path, params, n_exp, param_name)
     print(win_rate)
 
     # Plot results
-    stats = compute_move_time_stats(folder_path)
-    plot_multi_depth(stats, folder_path)
-    generate_ReflexionTime_Vs_RemainingPieces(folder_path,depths[-1])
-    generate_winrate_plot(folder_path,save=True)
+    stats = compute_move_time_stats(folder_path, param_name)
+    
+    if algorithm == 'AlphaBeta':
+        plot_multi_depth(stats, folder_path)
+        generate_ReflexionTime_Vs_RemainingPieces(folder_path, params[-1])
+    else:
+        plot_multi_iterations(stats, folder_path)
+        
+    generate_winrate_plot(folder_path, save=True)
    
-   
+def plot_multi_iterations(stats, folder_path=None):
+    plt.figure(figsize=(10, 6))
+
+    for iterations, data in sorted(stats.items()):
+        move_indices = list(range(len(data["agent1"]["times"]["means"])))
+        mean_times = data["agent1"]["times"]["means"]
+
+        plt.plot(move_indices, mean_times, marker='o', linestyle='-', 
+                label=f"{iterations} itérations")
+
+    plt.xlabel("Move Index")
+    plt.ylabel("Mean Move Time (seconds)")
+    plt.title("Agent Move Time per Move for Different MCTS Iterations")
+    plt.legend()
+    plt.grid(True)
+    
+    if folder_path:
+        plt.savefig(f"{folder_path}mcts_time_plot.png", dpi=300)
+    plt.show()
+
 def send_to_file(file_path,data):
     with open(file_path,'a') as f:
         f.write(data)
@@ -47,34 +81,38 @@ def generate_filename():
     return f"{timestamp}_game_stats"
 
 
-def run_experiment(agent_class, random_agent_class, game_manager_class, folder_path:str, depths:list, num_games:int):
+def run_experiment(agent_class, random_agent_class, game_manager_class, 
+                  folder_path: str, params: list, num_games: int, param_name: str):
     
     results = defaultdict(lambda: {"wins": 0, "losses": 0})
     
-    for depth in depths:
-        print(f"Running {num_games} games for depth {depth}...")
-        path = folder_path+generate_filename()+"_depth_"+str(depth)+".json"
+    for param in params:
+        print(f"Running {num_games} games for {param_name} {param}...")
+        path = f"{folder_path}{generate_filename()}_{param_name}_{param}.json"
+        
         for _ in range(num_games):
-            agent_1 = agent_class(1, depth)
+            agent_1 = agent_class(1, **{param_name: param})
             agent_2 = random_agent_class(-1)
             game_manager = game_manager_class(agent_1, agent_2, display=False)
             
             p1_score, p2_score = game_manager.play()
             agent_1_time, agent_2_time = extract_timePerMove(game_manager)
-            agent_1_piecesRemaining, agent_2_piecesRemaining = game_manager.agent_1_piecesRemaining, game_manager.agent_2_piecesRemaining
+            agent_1_pieces = game_manager.agent_1_piecesRemaining
+            agent_2_pieces = game_manager.agent_2_piecesRemaining
             
-            agent1 = {"times":agent_1_time, "pieces":agent_1_piecesRemaining}
-            agent2 = {"times":agent_2_time, "pieces":agent_2_piecesRemaining}
+            save_game_data(
+                path,
+                agent1={"times": agent_1_time, "pieces": agent_1_pieces},
+                agent2={"times": agent_2_time, "pieces": agent_2_pieces},
+                winner=p1_score,
+                param_value=param,
+                param_name=param_name
+            )
             
-            
-            
-            save_game_data(path, agent1, agent2, p1_score, depth)
-            
-            results[depth]["wins"] += (1 if p1_score > p2_score else 0)
-            results[depth]["losses"] += (1 if p1_score < p2_score else 0)
+            results[param]["wins"] += (1 if p1_score > 0 else 0)
+            results[param]["losses"] += (1 if p1_score < 0 else 0)
     
-    save_game_data(folder_path+"win_rate.json",win_rate=results)
-
+    save_game_data(f"{folder_path}win_rate.json", win_rate=results)
     return results
 
 
@@ -103,8 +141,7 @@ def extract_timePerMove(tgm:TextGameManager):
     return agent_1_time, agent_2_time
 
 
-def save_game_data(file_path, agent1=None, agent2=None, winner=None, depth=None, win_rate=None):
-    # Charger l'ancien fichier s'il existe
+def save_game_data(file_path, agent1=None, agent2=None, winner=None, param_value=None, param_name=None, win_rate=None):
     if os.path.exists(file_path):
         with open(file_path, 'r') as f:
             try:
@@ -114,22 +151,18 @@ def save_game_data(file_path, agent1=None, agent2=None, winner=None, depth=None,
     else:
         data = {}
 
-    # Générer une clé unique pour cette partie
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     
-    # Ajouter les données
-    if win_rate!=None:
+    if win_rate is not None:
         data = win_rate
-        
     else:
         data[timestamp] = {
             "agent1": agent1,
             "agent2": agent2,
             "winner": winner,
-            "depth": depth
+            param_name: param_value  # Utilisation dynamique du nom du paramètre
         }
 
-    # Sauvegarder le fichier JSON mis à jour
     with open(file_path, 'w') as f:
         json.dump(data, f, indent=4)
         
@@ -147,18 +180,18 @@ def plot_move_per_time_game(agent_1_time:list,agent_2_time:list,depth):
                 
     plt.figure(figsize=(10, 5))
 
-    # Tracer les temps de réflexion des agents
+
     plt.plot(moves, agent_1_time, label="Agent 1", marker="o", linestyle="-", color="red")
     plt.plot(moves, agent_2_time, label="Agent 2", marker="s", linestyle="--", color="black")
 
-    # Ajouter des titres et légendes
+
     plt.xlabel("Numéro du coup")
     plt.ylabel("Temps de réflexion (s)")
     plt.title(f"Temps de réflexion par coup pour chaque agent. Profondeur AlphaBeta = {depth}")
     plt.legend()
     plt.grid(True)
 
-    # Afficher le graphique
+
     plt.show()
 
     date = generate_filename()
@@ -167,44 +200,37 @@ def plot_move_per_time_game(agent_1_time:list,agent_2_time:list,depth):
 
 
 
-def compute_move_time_stats(directory):
-    stats = {}  # Store stats for each depth
+def compute_move_time_stats(directory, param_name='depth'):
+    stats = {}
     
-    # Loop through all JSON files in the directory
     for file_path in glob.glob(os.path.join(directory, "*.json")):
-        if "game_stats_depth" in file_path: 
-            depth = int(file_path[-6])        
+        if "game_stats" in file_path: 
+            param = int(file_path.split('_')[-1].split('.')[0])
+            
             with open(file_path, 'r') as f:
                 data = json.load(f)
 
             agent1_moves = []
             agent2_moves = []
-            
             agent1_pieces = []
-            agent2_pieces=[]
+            agent2_pieces = []
             
-            
-            # Ensure lists are long enough
             max_moves = 0
 
-            # Extract move times per game
             for game in data.values():
                 agent1_times = game["agent1"]["times"]
                 agent2_times = game["agent2"]["times"]
-                
                 a1_pieces = game["agent1"]["pieces"]
                 a2_pieces = game["agent2"]["pieces"]
                 
-                
                 max_moves = max(max_moves, len(agent1_times), len(agent2_times))
                 
-                # Append to per-move lists
                 agent1_moves.append(agent1_times)
                 agent2_moves.append(agent2_times)
                 agent1_pieces.append(a1_pieces)
                 agent2_pieces.append(a2_pieces)
 
-            # Compute mean and std for each move index
+
             agent1_means = []
             agent1_stds = []
             agent2_means = []
@@ -216,18 +242,14 @@ def compute_move_time_stats(directory):
 
                 agent1_means.append(np.mean(move_times_1) if move_times_1 else 0)
                 agent1_stds.append(np.std(move_times_1) if move_times_1 else 0)
-
                 agent2_means.append(np.mean(move_times_2) if move_times_2 else 0)
                 agent2_stds.append(np.std(move_times_2) if move_times_2 else 0)
 
-            # Store stats
-            stats[depth] = {
-                "agent1":{"times": {"means": agent1_means, "stds": agent1_stds}, "pieces": agent1_pieces },
-                "agent2": {"times": {"means": agent2_means, "stds": agent2_stds},"pieces": agent2_pieces}
+            stats[param] = {
+                "agent1": {"times": {"means": agent1_means, "stds": agent1_stds}, "pieces": agent1_pieces},
+                "agent2": {"times": {"means": agent2_means, "stds": agent2_stds}, "pieces": agent2_pieces}
             }
-        else : 
-            pass
-
+    
     return stats
 
 
@@ -376,20 +398,22 @@ def load_winrate_data(json_path):
     with open(json_path, 'r') as f:
         return json.load(f)
 
-def compute_percentages(data, total_games=50):
-    depths = sorted(data.keys(), key=int)
+def compute_percentages(data):
+    """Calcule les pourcentages à partir des données brutes"""
+    params = sorted(data.keys(), key=lambda x: int(x))
     wins, draws, losses = [], [], []
 
-    for depth in depths:
-        win = data[depth]["wins"]
-        loss = data[depth]["losses"]
-        draw = total_games - win - loss
+    for param in params:
+        total = data[param]["wins"] + data[param]["losses"]  # On suppose pas de draws explicites
+        win_pct = (data[param]["wins"] / total) * 100 if total > 0 else 0
+        loss_pct = (data[param]["losses"] / total) * 100 if total > 0 else 0
+        draw_pct = 0
 
-        wins.append(win / total_games * 100)
-        draws.append(draw / total_games * 100)
-        losses.append(loss / total_games * 100)
+        wins.append(win_pct)
+        losses.append(loss_pct)
+        draws.append(draw_pct)
 
-    return depths, wins, draws, losses
+    return params, wins, draws, losses
 
 def plot_winrate(depths, win_pct, draw_pct, loss_pct, save_path=None):
     x = range(len(depths))
