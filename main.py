@@ -2,19 +2,14 @@ from visual_game_manager import *
 from game_manager import *
 from stats import *
 
-#depths=[1,2,3]
-#pipeline(depths,2)
-
-
-folder_path = "stats\\2025-04-04_17-13-12\\"
-stats = compute_move_time_stats(folder_path)
-print(stats)
-times = stats[2]['agent1']['times']['means']
-pieces = stats[2]['agent1']['pieces'][0]
-
-
-plot_time_and_pieces(stats,3)
 '''
+Code to launch pipeline
+depths=[1,2,3,4,5]
+pipeline(depths,50)
+'''
+
+'''
+Code to play 1 game visual or text
 
 DEPTH = 2
 

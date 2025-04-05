@@ -170,7 +170,7 @@ def compute_move_time_stats(directory):
     
     # Loop through all JSON files in the directory
     for file_path in glob.glob(os.path.join(directory, "*.json")):
-        if "win_rate" not in file_path: 
+        if "game_stats_depth" in file_path: 
             depth = int(file_path[-6])        
             with open(file_path, 'r') as f:
                 data = json.load(f)
@@ -334,7 +334,7 @@ def plot_move_time_all_depth(stats, depth_max):
 
 
 
-def plot_time_and_pieces(agent_data,  depth,agent_name="agent1"):
+def plot_time_and_pieces(agent_data,  depth,agent_name="agent1",folder_path=None):
     times = agent_data[depth][agent_name]['times']['means']
     pieces = agent_data[depth][agent_name]["pieces"][0]
 
@@ -358,19 +358,75 @@ def plot_time_and_pieces(agent_data,  depth,agent_name="agent1"):
     ax2.plot(turns, pieces, label='Pièces restantes', color=color_pieces)
     ax2.tick_params(axis='y', labelcolor=color_pieces)
 
-    plt.title(f"{agent_name} – Temps de réflexion et pièces restantes par coup")
+    plt.title(f"{agent_name} – Temps de réflexion et pièces restantes par coup. Profondeur: {depth}")
     fig.tight_layout()
     plt.grid(True)
+    if folder_path != None:
+        plt.savefig(folder_path+f"reflexionTime_vs_remainingPieces_{depth}.png", dpi=300)
+    
     plt.show()
 
 
 
 
 
+def load_winrate_data(json_path):
+    with open(json_path, 'r') as f:
+        return json.load(f)
+
+def compute_percentages(data, total_games=50):
+    depths = sorted(data.keys(), key=int)
+    wins, draws, losses = [], [], []
+
+    for depth in depths:
+        win = data[depth]["wins"]
+        loss = data[depth]["losses"]
+        draw = total_games - win - loss
+
+        wins.append(win / total_games * 100)
+        draws.append(draw / total_games * 100)
+        losses.append(loss / total_games * 100)
+
+    return depths, wins, draws, losses
+
+def plot_winrate(depths, win_pct, draw_pct, loss_pct, save_path=None):
+    x = range(len(depths))
+    plt.figure(figsize=(10, 6))
     
+    plt.bar(x, win_pct, label='Wins', color='green')
+    plt.bar(x, draw_pct, bottom=win_pct, label='Draws', color='gray')
+    plt.bar(x, loss_pct, bottom=[w + d for w, d in zip(win_pct, draw_pct)],
+            label='Losses', color='red')
 
-#stats = compute_move_time_stats("stats")
-#plot_multi_depth(stats)  # Change depth as needed
+    plt.xticks(x, depths)
+    plt.xlabel('Search Depth')
+    plt.ylabel('Percentage (%)')
+    plt.title('Win/Draw/Loss Percentage by Depth')
+    plt.legend()
+    plt.grid(axis='y', linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path)
+    plt.show()
 
+def generate_winrate_plot(folderpath, filename="win_rate.json", save=False):
+    json_path = os.path.join(folderpath, filename)
+    data = load_winrate_data(json_path)
+    depths, wins, draws, losses = compute_percentages(data)
+    
+    save_path = None
+    if save:
+        save_path = os.path.join(folderpath, "winrate_plot.svg")  # or .png
+    plot_winrate(depths, wins, draws, losses, save_path)
+
+
+
+def generate_ReflexionTime_Vs_RemainingPieces(folder_path,depth):
+    folder_path = folder_path
+    stats = compute_move_time_stats(folder_path)
+
+    for i in range (1,depth+1):
+        plot_time_and_pieces(stats,i,folder_path=folder_path)
 
 
