@@ -15,12 +15,16 @@ class AgentMcts:
         self.iterations = iterations
 
     def mcts(self, state):
+        if not state.actions():
+            return random.choice(state.actions()) if state.actions() else None
         root = self.Node(None, None, state)
         for _ in range(self.iterations):
             leaf = self.select(root)
             child = self.expand(leaf)
             result = self.simulate(child)
             self.backpropagate(child, result)
+        if not root.children:
+            return random.choice(state.actions()) if state.actions() else None
         return max(root.children, key=lambda node: node.visits).action_from_parent
 
     def UCB1(self, node):
@@ -65,12 +69,14 @@ class AgentMcts:
         
         #random simu
         while not actual_state.is_terminal():
+            possible_actions = actual_state.actions()
+            if not possible_actions:
+                break
             action = random.choice(actual_state.actions())
             actual_state = actual_state.result(action)
         
         #result for parent
-        return actual_state.utility(-node.state.to_move())
-
+        return actual_state.utility(-node.state.to_move()) if actual_state.is_terminal() else 0
 
     def backpropagate(self, node, result):
         node.visits += 1
