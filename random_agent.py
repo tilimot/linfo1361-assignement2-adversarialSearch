@@ -2,7 +2,7 @@ from agent import Agent
 import random
 import fenix
 
-class RandomAgent(Agent):
+class RandomAgent(Agent,depth=None):
     def act(self, state, remaining_time):
         actions = state.actions()
         if len(actions) == 0:

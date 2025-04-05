@@ -1,3 +1,5 @@
+from fenix import *
+
 class Agent:
     def __init__(self, player,depth = 1):
         self.player = player
@@ -42,6 +44,7 @@ class Agent:
                 break  # Coupure alpha-beta
 
         return value, action
+            
     
     def act(self, state, remaining_time):
         action = self.alpha_beta_search(state)
