@@ -26,6 +26,8 @@ def pipeline(depths, n_exp):
     # Plot results
     stats = compute_move_time_stats(folder_path)
     plot_multi_depth(stats, folder_path)
+    generate_ReflexionTime_Vs_RemainingPieces(folder_path,depths[-1])
+    generate_winrate_plot(folder_path,save=True)
    
    
 def send_to_file(file_path,data):

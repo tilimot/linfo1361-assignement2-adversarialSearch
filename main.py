@@ -2,14 +2,16 @@ from visual_game_manager import *
 from game_manager import *
 from stats import *
 
-'''
-Code to launch pipeline
+
+#Code to launch pipeline
 depths=[1,2,3,4,5]
 pipeline(depths,50)
-'''
+
+
+
 
 '''
-Code to play 1 game visual or text
+#Code to play 1 game visual or text
 
 DEPTH = 2
 
