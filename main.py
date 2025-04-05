@@ -1,12 +1,14 @@
 from visual_game_manager import *
 from game_manager import *
 from stats import *
+from alpha_beta_iterative import *
 
 
 #Code to launch pipeline
-depths=[1,2,3,4,5]
-pipeline(depths,50)
 
+depths=[3,4]
+pipeline(depths,50,AlphaBetaIterative,Agent)
+#generate_winrate_plot(".\\stats\\2025-04-05_18-01-30\\",save=True)
 
 
 

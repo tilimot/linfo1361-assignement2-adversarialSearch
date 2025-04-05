@@ -16,11 +16,11 @@ from random_agent import *
 #NUM_GAMES = 50  # Number of games per depth
 #DEPTHS = [1, 2, 3, 4]  # Depths to test
 
-def pipeline(depths, n_exp):
+def pipeline(depths, n_exp, agent1_class, agent2_class):
     folder_path = generate_folderpath()
 
     # Run Experiments & store it into ./stats/ folder
-    win_rate = run_experiment(Agent,RandomAgent, TextGameManager, folder_path,depths, n_exp)
+    win_rate = run_experiment(agent1_class,agent2_class, TextGameManager, folder_path,depths, n_exp)
     print(win_rate)
 
     # Plot results
@@ -47,34 +47,89 @@ def generate_filename():
     return f"{timestamp}_game_stats"
 
 
-def run_experiment(agent_class, random_agent_class, game_manager_class, folder_path:str, depths:list, num_games:int):
+def run_experiment(agent1_class, agent2_class, game_manager_class, folder_path:str, depths:list, num_games:int):
     
     results = defaultdict(lambda: {"wins": 0, "losses": 0})
     
-    for depth in depths:
-        print(f"Running {num_games} games for depth {depth}...")
-        path = folder_path+generate_filename()+"_depth_"+str(depth)+".json"
-        for _ in range(num_games):
-            agent_1 = agent_class(1, depth)
-            agent_2 = random_agent_class(-1)
-            game_manager = game_manager_class(agent_1, agent_2, display=False)
-            
-            p1_score, p2_score = game_manager.play()
-            agent_1_time, agent_2_time = extract_timePerMove(game_manager)
-            agent_1_piecesRemaining, agent_2_piecesRemaining = game_manager.agent_1_piecesRemaining, game_manager.agent_2_piecesRemaining
-            
-            agent1 = {"times":agent_1_time, "pieces":agent_1_piecesRemaining}
-            agent2 = {"times":agent_2_time, "pieces":agent_2_piecesRemaining}
-            
-            
-            
-            save_game_data(path, agent1, agent2, p1_score, depth)
-            
-            results[depth]["wins"] += (1 if p1_score > p2_score else 0)
-            results[depth]["losses"] += (1 if p1_score < p2_score else 0)
+    if agent2_class == RandomAgent:
+        for depth in depths:
+            print(f"Running {num_games} games for depth {depth}...")
+            path = folder_path+generate_filename()+"_depth_"+str(depth)+".json"
+            for _ in range(num_games):
+                agent_1 = agent1_class(1, depth)
+                agent_2 = agent1_class(-1)    
+                game_manager = game_manager_class(agent_1, agent_2, display=False)
+                
+                p1_score, p2_score = game_manager.play()
+                agent_1_time, agent_2_time = extract_timePerMove(game_manager)
+                agent_1_piecesRemaining, agent_2_piecesRemaining = game_manager.agent_1_piecesRemaining, game_manager.agent_2_piecesRemaining
+                
+                agent1 = {"times":agent_1_time, "pieces":agent_1_piecesRemaining}
+                agent2 = {"times":agent_2_time, "pieces":agent_2_piecesRemaining}
+                
+                
+                
+                save_game_data(path, agent1, agent2, p1_score, depth)
+                
+                results[depth]["wins"] += (1 if p1_score > p2_score else 0)
+                results[depth]["losses"] += (1 if p1_score < p2_score else 0)
+        
+        save_game_data(folder_path+"win_rate.json",win_rate=results)
     
-    save_game_data(folder_path+"win_rate.json",win_rate=results)
-
+    elif (agent1_class == agent2_class):
+        i=0
+        l = len(depths)
+        for depth in depths:
+            print(f"Running {num_games} games for depth {depth+1} vs {depth}...")
+            path = folder_path+generate_filename()+"_depth_"+str(depth)+".json"
+            for _ in range(num_games):
+                agent_1 = agent1_class(1, depths[i+1])
+                agent_2 = agent1_class(-1,depths[i])    
+                game_manager = game_manager_class(agent_1, agent_2, display=False)
+                
+                p1_score, p2_score = game_manager.play()
+                agent_1_time, agent_2_time = extract_timePerMove(game_manager)
+                agent_1_piecesRemaining, agent_2_piecesRemaining = game_manager.agent_1_piecesRemaining, game_manager.agent_2_piecesRemaining
+                
+                agent1 = {"times":agent_1_time, "pieces":agent_1_piecesRemaining}
+                agent2 = {"times":agent_2_time, "pieces":agent_2_piecesRemaining}
+                
+                
+                
+                save_game_data(path, agent1, agent2, p1_score, depth)
+                
+                results[depth]["wins"] += (1 if p1_score > p2_score else 0)
+                results[depth]["losses"] += (1 if p1_score < p2_score else 0)
+            i+=1
+            if i>l-2:
+                break
+        
+        save_game_data(folder_path+"win_rate.json",win_rate=results)
+    
+    elif (agent1_class != agent2_class):
+        for depth in depths:
+            print(f"Running {num_games} games for depth {depth}...")
+            path = folder_path+generate_filename()+"_depth_"+str(depth)+".json"
+            for _ in range(num_games):
+                agent_1 = agent1_class(1, depth)
+                agent_2 = agent1_class(-1, depth)    
+                game_manager = game_manager_class(agent_1, agent_2, display=False)
+                
+                p1_score, p2_score = game_manager.play()
+                agent_1_time, agent_2_time = extract_timePerMove(game_manager)
+                agent_1_piecesRemaining, agent_2_piecesRemaining = game_manager.agent_1_piecesRemaining, game_manager.agent_2_piecesRemaining
+                
+                agent1 = {"times":agent_1_time, "pieces":agent_1_piecesRemaining}
+                agent2 = {"times":agent_2_time, "pieces":agent_2_piecesRemaining}
+                
+                
+                
+                save_game_data(path, agent1, agent2, p1_score, depth)
+                
+                results[depth]["wins"] += (1 if p1_score > p2_score else 0)
+                results[depth]["losses"] += (1 if p1_score < p2_score else 0)
+        
+        save_game_data(folder_path+"win_rate.json",win_rate=results)
     return results
 
 
@@ -424,11 +479,11 @@ def generate_winrate_plot(folderpath, filename="win_rate.json", save=False):
 
 
 
-def generate_ReflexionTime_Vs_RemainingPieces(folder_path,depth):
+def generate_ReflexionTime_Vs_RemainingPieces(folder_path,depths):
     folder_path = folder_path
     stats = compute_move_time_stats(folder_path)
 
-    for i in range (1,depth+1):
+    for i in depths:
         plot_time_and_pieces(stats,i,folder_path=folder_path)
 
 
