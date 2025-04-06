@@ -17,6 +17,10 @@ class TextGameManager:
         
         self.time_agent_1=[]
         self.time_agent_2=[]
+        
+        self.agent_1_piecesRemaining = []
+        self.agent_2_piecesRemaining = []
+        
     
 
     def play(self):
@@ -56,10 +60,12 @@ class TextGameManager:
 
             if current_player == 1:
                 self.time_agent_1.append(remaining_time)
+                self.agent_1_piecesRemaining.append(len(state.pieces))
                 self.remaining_time_1 = remaining_time
                 
             else:
                 self.time_agent_2.append(remaining_time)
+                self.agent_2_piecesRemaining.append(len(state.pieces))
                 self.remaining_time_2 = remaining_time
                 
             turn += 1
