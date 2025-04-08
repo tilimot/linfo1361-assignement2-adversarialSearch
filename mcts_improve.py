@@ -35,8 +35,7 @@ class AgentMcts2:
             return float('inf')
         
         win_by_visits = node.wins / node.visits
-        
-        C = self.search_parameter
+        C = self.search_parameter * (1 + math.log(1 + node.parent_node.visits) / 100)  # Ajustement dynamique
         explore = C * math.sqrt(math.log(node.parent_node.visits + 1) / (node.visits + 1))
         strategic_bonus = self.strategic_bonus(node)
         
@@ -91,7 +90,8 @@ class AgentMcts2:
                 new_node_child = self.Node(node, action, action_res)
                 node.children.append(new_node_child)
         if node.children:
-            return node.children[0]
+            #random child
+            return random.choice(node.children)
         return node
 
     def simulate(self, node):
