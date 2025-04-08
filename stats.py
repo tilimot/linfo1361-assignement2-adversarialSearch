@@ -12,24 +12,29 @@ from mcts import *
 from random import *
 from game_manager import *
 from random_agent import *
+from mcts_improve import *
 
 # Simulation parameters
 #NUM_GAMES = 50  # Number of games per depth
 #DEPTHS = [1, 2, 3, 4]  # Depths to test
 
    
-def pipeline(params, n_exp, algorithm='AlphaBeta'):
+def pipeline(params, n_exp, algorithm='MCTS'):
     folder_path = generate_folderpath()
     
     if algorithm == 'AlphaBeta':
         agent_class = Agent
         param_name = 'depth'
+        opponent_class = AgentMcts
+        opponent_params = {'iterations': 50}
     else:
-        agent_class = AgentMcts
+        agent_class = AgentMctsOptimized
         param_name = 'iterations'
+        opponent_class = AgentMcts
+        opponent_params = {'iterations': 50}
 
     # Run Experiments
-    win_rate = run_experiment(agent_class, RandomAgent, TextGameManager, 
+    win_rate = run_experiment(agent_class, opponent_class, TextGameManager, 
                             folder_path, params, n_exp, param_name)
     print(win_rate)
 
@@ -69,10 +74,10 @@ def send_to_file(file_path,data):
         f.write(data)
 
 def generate_folderpath():
-    date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    folder_path = "stats\\"+date+"\\"
+    folder_path = "stats/"
     os.makedirs(folder_path, exist_ok=True)
     return folder_path
+
 
 
 def generate_filename():
@@ -81,7 +86,7 @@ def generate_filename():
     return f"{timestamp}_game_stats"
 
 
-def run_experiment(agent_class, random_agent_class, game_manager_class, 
+def run_experiment(agent_class, opponent_class, game_manager_class, 
                   folder_path: str, params: list, num_games: int, param_name: str):
     
     results = defaultdict(lambda: {"wins": 0, "losses": 0})
@@ -92,7 +97,7 @@ def run_experiment(agent_class, random_agent_class, game_manager_class,
         
         for _ in range(num_games):
             agent_1 = agent_class(1, **{param_name: param})
-            agent_2 = random_agent_class(-1)
+            agent_2 = opponent_class(-1)
             game_manager = game_manager_class(agent_1, agent_2, display=False)
             
             p1_score, p2_score = game_manager.play()
@@ -454,5 +459,4 @@ def generate_ReflexionTime_Vs_RemainingPieces(folder_path,depth):
 
     for i in range (1,depth+1):
         plot_time_and_pieces(stats,i,folder_path=folder_path)
-
 
