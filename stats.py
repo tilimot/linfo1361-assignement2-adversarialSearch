@@ -28,7 +28,7 @@ def pipeline(params, n_exp, algorithm='MCTS'):
         opponent_class = AgentMcts
         opponent_params = {'iterations': 50}
     else:
-        agent_class = AgentMctsOptimized
+        agent_class = AgentMcts2
         param_name = 'iterations'
         opponent_class = AgentMcts
         opponent_params = {'iterations': 50}
