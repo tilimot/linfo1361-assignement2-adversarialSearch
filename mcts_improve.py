@@ -49,26 +49,38 @@ class AgentMcts2:
         action = node.action_from_parent
         state = node.state
         
-        # Block adversary
+        # Aggressive play
         adversary = -state.current_player
-        for direction_i, direction_j in [(-1, 0), (0, -1), (1, 0), (0, 1)]:
-            potential_pos = (action.end[0] + direction_i, action.end[1] + direction_j)
-            if self._is_inside(state, potential_pos) and state.pieces.get(potential_pos, 0) == adversary:
-                bonus += 10
-                break
-            
-        if len(action.removed) > 0:
-            bonus += 8
-            
-        if any(abs(state.pieces.get(piece, 0)) == 2 for piece in action.removed):
-            bonus += 15
-            
         for direction_i, direction_j in [(-1, 0), (0, -1), (1, 0), (0, 1)]:
             potential_pos = (action.end[0] + direction_i, action.end[1] + direction_j)
             if self._is_inside(state, potential_pos) and state.pieces.get(potential_pos, 0) == adversary:
                 bonus += 20
                 break
-                
+        
+        # Capture opponent    
+        if len(action.removed) > 0:
+            bonus += 8
+        
+        # bonus if captured is general    
+        if any(abs(state.pieces.get(piece, 0)) == 2 for piece in action.removed):
+            bonus += 15
+        
+        
+        # Defensive play    
+        for direction_i, direction_j in [(-1, 0), (0, -1), (1, 0), (0, 1)]:
+            potential_pos = (action.end[0] + direction_i, action.end[1] + direction_j)
+            if self._is_inside(state, potential_pos) and state.pieces.get(potential_pos, 0) == self.player:
+                bonus -= 10
+                break
+        
+        # Maximizing pieces
+        for pos, piece in state.pieces.items():
+            # Count each Player piece and sum their value, count each adversary piece and substract their value. 
+            if piece * self.player > 0:
+                bonus += (abs(piece)**2)  # 1, 2 ou 3
+            elif piece * self.player < 0:
+                bonus -= (abs(piece)**2)
+
         return bonus
 
     # Check if the position is within the board limits
@@ -125,7 +137,7 @@ class AgentMcts2:
 
 
     def backpropagate(self, node, result):
-        # Propagate the result (win/loss) up to the root
+        # Propagate the result (win/loss) up to the root    
         node.visits += 1
         if result == 1: 
             node.wins += 1
