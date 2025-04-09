@@ -28,18 +28,16 @@ class AgentMcts2:
             self.backpropagate(child, result)
         if not root.children:
             return random.choice(state.actions()) if state.actions() else None
-        return max(root.children, key=lambda node: node.visits + self.strategic_bonus(node)).action_from_parent
+        return max(root.children, key=lambda node: node.visits).action_from_parent
 
     def UCB1(self, node):
         if node.visits == 0:
             return float('inf')
-        
-        win_by_visits = node.wins / node.visits
-        C = self.search_parameter * (1 + math.log(1 + node.parent_node.visits) / 100)  # Ajustement dynamique
+        win_rate = node.wins / node.visits
+        C = self.search_parameter
         explore = C * math.sqrt(math.log(node.parent_node.visits + 1) / (node.visits + 1))
-        strategic_bonus = self.strategic_bonus(node)
-        
-        return win_by_visits + explore + strategic_bonus
+        return win_rate + explore  # PAS de strategic_bonus ici
+
     
     def strategic_bonus(self, node):
         if not node.action_from_parent:
@@ -103,18 +101,18 @@ class AgentMcts2:
             possible_actions = actual_state.actions()
             if not possible_actions:
                 break
-            
-            best_action = None
-            max_bonus = -float('inf')
-            
-            for action in possible_actions:
-                bonus = self.strategic_bonus(node)
-                if bonus > max_bonus:
-                    max_bonus = bonus
-                    best_action = action
-            
 
-            actual_state = actual_state.result(best_action)            
+            best_action = random.choice(possible_actions)
+            best_score = -float('inf')
+            for action in possible_actions:
+                fake_node = self.Node(None, action, actual_state)
+                bonus = self.strategic_bonus(fake_node)
+                if bonus > best_score:
+                    best_score = bonus
+                    best_action = action
+
+            actual_state = actual_state.result(best_action)
+        
         return actual_state.utility(-node.state.to_move()) if actual_state.is_terminal() else 0
 
 
