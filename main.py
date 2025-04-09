@@ -3,7 +3,7 @@ from game_manager import *
 from stats import *
 from mcts import AgentMcts
 from mcts_improve import AgentMcts2
-from mcts_2 import AgentMctsB
+from mcts_improve3 import *
 #Code to launch pipeline
 # depths=[1,2,3,4]
 # pipeline(depths,50, algorithm='AlphaBeta')
@@ -24,8 +24,8 @@ from mcts_2 import AgentMctsB
 import time
 import matplotlib.pyplot as plt
 
-agent2 = AgentMcts(1, 50)
-agent1 = AgentMcts2(-1, 50)
+agent1 = AgentMcts(1, 50)
+agent2 = AgentMcts3(-1, 50)
 
 num_games = 25
 results = [] 
@@ -48,11 +48,11 @@ draws = sum(1 for r in results if r == (0, 0))
 
 print("\n=== Résultats ===")
 print(f"Agent 1 (AgentMcts) Wins: {agent1_wins}")
-print(f"Agent 2 (AgentMcts2) Wins: {agent2_wins}")
+print(f"Agent 2 (AgentMcts3) Wins: {agent2_wins}")
 print(f"Draws: {draws}")
 print(f"Durée moyenne par partie: {sum(durations) / len(durations):.2f}s")
 
-labels = ['AgentMcts2 Wins', 'AgentMcts Wins', 'Draws']
+labels = ['AgentMcts3 Wins', 'AgentMcts Wins', 'Draws']
 values = [agent1_wins, agent2_wins, draws]
 
 plt.figure(figsize=(10, 5))
